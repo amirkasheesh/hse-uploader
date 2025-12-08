@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileStorage", "FileStorage\FileStorage.csproj", "{C94BA33A-49D3-4CA4-B7A2-2ED9BD363CBB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileAnalysis", "FileAnalysis\FileAnalysis.csproj", "{510E0CD9-8950-49CD-892E-15822CEA59B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway", "Gateway\Gateway.csproj", "{BF5F4F15-EA3F-4A9E-93C1-3AF9917FE68E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C94BA33A-49D3-4CA4-B7A2-2ED9BD363CBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C94BA33A-49D3-4CA4-B7A2-2ED9BD363CBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C94BA33A-49D3-4CA4-B7A2-2ED9BD363CBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C94BA33A-49D3-4CA4-B7A2-2ED9BD363CBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{510E0CD9-8950-49CD-892E-15822CEA59B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{510E0CD9-8950-49CD-892E-15822CEA59B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{510E0CD9-8950-49CD-892E-15822CEA59B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{510E0CD9-8950-49CD-892E-15822CEA59B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF5F4F15-EA3F-4A9E-93C1-3AF9917FE68E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF5F4F15-EA3F-4A9E-93C1-3AF9917FE68E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF5F4F15-EA3F-4A9E-93C1-3AF9917FE68E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF5F4F15-EA3F-4A9E-93C1-3AF9917FE68E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
