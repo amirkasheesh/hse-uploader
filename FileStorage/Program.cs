@@ -1,13 +1,12 @@
+using System.Text.Json;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -16,29 +15,117 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
 
-app.MapGet("/weatherforecast", () =>
+
+(string filePath, string metaPath) BuildPaths(Guid fileId)
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    string directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "Store");
+    if (!Directory.Exists(directoryPath))
+    {
+        Directory.CreateDirectory(directoryPath);
+    }
+
+    string filePath = Path.Combine(directoryPath, fileId.ToString());
+    string metaPath = Path.Combine(directoryPath, fileId.ToString() + ".meta.json");
+
+    return (filePath, metaPath);
+}
+
+(Guid, string, long) UploadFile(IFormFile file)
+{
+    if (file == null)
+        throw new ArgumentException("Файл не был предоставлен!");
+
+    if (file.Length == 0)
+        throw new ArgumentException("Файл пустой!");
+
+    Guid fileId = Guid.NewGuid();
+
+    var (filePath, metaPath) = BuildPaths(fileId);
+
+    using (var stream = new FileStream(filePath, FileMode.Create))
+    {
+        file.CopyTo(stream);
+    }
+
+    var meta = new FileMeta
+    {
+        FileId = fileId,
+        OriginalName = file.FileName,
+        Size = file.Length,
+        ContentType = string.IsNullOrWhiteSpace(file.ContentType)
+            ? "application/octet-stream"
+            : file.ContentType
+    };
+
+    string json = JsonSerializer.Serialize(meta);
+    File.WriteAllText(metaPath, json);
+
+    return (fileId, file.FileName, file.Length);
+}
+
+string DownloadFile(Guid fileId)
+{
+    var (filePath, _) = BuildPaths(fileId);
+
+    if (!File.Exists(filePath))
+        throw new FileNotFoundException("Файл не был найден!");
+
+    return filePath;
+}
+
+string GetDownloadName(Guid fileId)
+{
+    var (_, metaPath) = BuildPaths(fileId);
+
+    if (!File.Exists(metaPath))
+        return fileId.ToString();
+
+    string json = File.ReadAllText(metaPath);
+    var meta = JsonSerializer.Deserialize<FileMeta>(json);
+
+    if (meta == null || string.IsNullOrWhiteSpace(meta.OriginalName))
+        return fileId.ToString();
+
+    return meta.OriginalName;
+}
+
+
+app.MapPost("/files", (IFormFile file) =>
+{
+    try
+    {
+        var (id, name, size) = UploadFile(file);
+        return Results.Ok(new { fileId = id, fileName = name, size });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 })
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+.DisableAntiforgery();
+
+app.MapGet("/files/{fileId:guid}", (Guid fileId) =>
+{
+    try
+    {
+        var filePath = DownloadFile(fileId);
+        var downloadName = GetDownloadName(fileId);
+
+        return Results.File(filePath, "application/octet-stream", downloadName);
+    }
+    catch (FileNotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+});
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+class FileMeta
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    public Guid FileId { get; set; }
+    public string OriginalName { get; set; } = "";
+    public long Size { get; set; }
+    public string ContentType { get; set; } = "application/octet-stream";
 }
