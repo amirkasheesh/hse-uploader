@@ -23,7 +23,7 @@ services:
     ports:
       - "5170:8080"
     volumes:
-      - analysis_db:/app
+      - analysis_db:/app/data
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Services__FileStorage=http://file-storage:8080

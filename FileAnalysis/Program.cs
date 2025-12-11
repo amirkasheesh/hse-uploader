@@ -4,6 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var dataDir = Path.Combine(Directory.GetCurrentDirectory(), "data");
+if (!Directory.Exists(dataDir))
+{
+    Directory.CreateDirectory(dataDir);
+}
+
+builder.Services.AddDbContext<AnalysisDbContext>(options => options.UseSqlite($"Data Source={Path.Combine(dataDir, "analysis.db")}"));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -117,7 +124,18 @@ app.MapGet("/submissions/{id:guid}/wordcloud", async (Guid id, AnalysisDbContext
     }
 
     var storageClient = httpClientFactory.CreateClient("FileStorage");
-    var fileResponse = await storageClient.GetAsync($"/files/{submission.FileId}");
+    HttpResponseMessage fileResponse;
+    try 
+    {
+        fileResponse = await storageClient.GetAsync($"/files/{submission.FileId}");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(
+            title: "Ошибка доступа к FileStorage",
+            detail: ex.Message,
+            statusCode: StatusCodes.Status502BadGateway);
+    }
     
     if (!fileResponse.IsSuccessStatusCode)
     {
@@ -196,10 +214,8 @@ app.MapGet("/submissions", (AnalysisDbContext db) =>
 .WithName("GetSubmissions")
 .WithOpenApi();
 
-// 5) Аналитика по заданию: все сдачи + агрегаты
 app.MapGet("/assignments/{assignment}/reports", (string assignment, AnalysisDbContext db) =>
 {
-    // Берём все сдачи по этому заданию
     var itemsQuery =
         from s in db.Submissions
         where s.Assignment == assignment
