@@ -14,8 +14,6 @@ builder.Services.AddDbContext<AnalysisDbContext>(options => options.UseSqlite($"
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<AnalysisDbContext>(options =>
-    options.UseSqlite("Data Source=analysis.db"));
 
 var fileStorageBaseUrl = builder.Configuration["Services:FileStorage"] ?? "http://localhost:5070";
 

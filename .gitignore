@@ -8,6 +8,7 @@
 *.user
 *.suo
 
-# OS
+*.swp
 .DS_Store
-Thumbs.db
+FileAnalysis/*.db
+FileStorage/Store/
