@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  file-storage:
+    build:
+      context: ./FileStorage
+      dockerfile: Dockerfile
+    container_name: file-storage
+    ports:
+      - "5070:8080"
+    volumes:
+      - filestorage_data:/app/Store
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - backend
+
+  file-analysis:
+    build:
+      context: ./FileAnalysis
+      dockerfile: Dockerfile
+    container_name: file-analysis
+    ports:
+      - "5170:8080"
+    volumes:
+      - analysis_db:/app
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - backend
+
+  gateway:
+    build:
+      context: ./Gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    ports:
+      - "5260:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Services__FileStorage=http://file-storage:8080
+      - Services__FileAnalysis=http://file-analysis:8080
+    depends_on:
+      - file-storage
+      - file-analysis
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  filestorage_data:
+  analysis_db:
