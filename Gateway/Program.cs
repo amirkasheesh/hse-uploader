@@ -205,6 +205,34 @@ app.MapGet("/submissions/{id:guid}/report", async (Guid id, IHttpClientFactory h
 .WithName("GatewayGetSubmissionReport")
 .WithOpenApi();
 
+app.MapGet("/submissions/{id:guid}/wordcloud", async (Guid id, IHttpClientFactory httpClientFactory) =>
+{
+    var analysisClient = httpClientFactory.CreateClient("FileAnalysis");
+
+    HttpResponseMessage response;
+    try
+    {
+        response = await analysisClient.GetAsync($"/submissions/{id}/wordcloud");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(
+            title: "Ошибка при обращении к FileAnalysis",
+            detail: ex.Message,
+            statusCode: StatusCodes.Status502BadGateway);
+    }
+
+    if (!response.IsSuccessStatusCode)
+    {
+        var error = await response.Content.ReadAsStringAsync();
+        return Results.Problem(detail: error, statusCode: (int)response.StatusCode);
+    }
+
+    var bytes = await response.Content.ReadAsByteArrayAsync();
+    return Results.File(bytes, "image/png");
+})
+.WithName("GatewayGetWordCloud")
+.WithOpenApi();
 
 app.MapGet("/files/{fileId:guid}", async (Guid fileId, IHttpClientFactory httpClientFactory) =>
 {

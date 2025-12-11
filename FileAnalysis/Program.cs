@@ -10,6 +10,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AnalysisDbContext>(options =>
     options.UseSqlite("Data Source=analysis.db"));
 
+var fileStorageBaseUrl = builder.Configuration["Services:FileStorage"] ?? "http://localhost:5070";
+
+builder.Services.AddHttpClient("FileStorage", client =>
+{
+    client.BaseAddress = new Uri(fileStorageBaseUrl);
+});
+
+builder.Services.AddHttpClient("QuickChart");
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -99,12 +108,70 @@ app.MapGet("/submissions/{id:guid}", (Guid id, AnalysisDbContext db) =>
 .WithName("GetSubmissionById")
 .WithOpenApi();
 
+app.MapGet("/submissions/{id:guid}/wordcloud", async (Guid id, AnalysisDbContext db, IHttpClientFactory httpClientFactory) =>
+{
+    var submission = await db.Submissions.FindAsync(id);
+    if (submission == null) 
+    {
+        return Results.NotFound("Сдача не найдена");
+    }
+
+    var storageClient = httpClientFactory.CreateClient("FileStorage");
+    var fileResponse = await storageClient.GetAsync($"/files/{submission.FileId}");
+    
+    if (!fileResponse.IsSuccessStatusCode)
+    {
+        return Results.Problem("Не удалось скачать файл для анализа");
+    }
+
+    var fileStream = await fileResponse.Content.ReadAsStreamAsync();
+
+    using var reader = new StreamReader(fileStream);
+    var text = await reader.ReadToEndAsync();
+    
+    if (text.Length > 10000) 
+    {
+        text = text.Substring(0, 10000);
+    }
+
+    var chartConfig = new
+    {
+        format = "png",
+        width = 800,
+        height = 600,
+        fontFamily = "sans-serif",
+        fontScale = 30,
+        scale = "linear",
+        chart = new
+        {
+            type = "wordCloud",
+            data = new
+            {
+                text = text,
+                rotate = 0
+            }
+        }
+    };
+
+    var qcClient = httpClientFactory.CreateClient("QuickChart");
+    var response = await qcClient.PostAsJsonAsync("https://quickchart.io/chart", chartConfig);
+
+    if (!response.IsSuccessStatusCode)
+        return Results.Problem("Ошибка генерации облака слов");
+
+    var imageBytes = await response.Content.ReadAsByteArrayAsync();
+    return Results.File(imageBytes, "image/png");
+})
+.WithName("GetWordCloud")
+.WithOpenApi();
 
 app.MapGet("/submissions/{id:guid}/report", (Guid id, AnalysisDbContext db) =>
 {
     var report = db.Reports.SingleOrDefault(r => r.SubmissionId == id);
     if (report == null)
+    {
         return Results.NotFound("Отчёт по этой сдаче не найден!");
+    }
 
     return Results.Ok(report);
 })

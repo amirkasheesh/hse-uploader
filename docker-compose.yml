@@ -26,6 +26,7 @@ services:
       - analysis_db:/app
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - Services__FileStorage=http://file-storage:8080
     networks:
       - backend
 
