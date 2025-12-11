@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,9 +40,20 @@ if (app.Environment.IsDevelopment())
     if (file.Length == 0)
         throw new ArgumentException("Файл пустой!");
 
-    Guid fileId = Guid.NewGuid();
+    Guid fileId;
+    using (var md5 = MD5.Create())
+    using (var stream = file.OpenReadStream())
+    {
+        var hashBytes = md5.ComputeHash(stream);
+        fileId = new Guid(hashBytes);
+    }
 
     var (filePath, metaPath) = BuildPaths(fileId);
+
+    if (File.Exists(filePath) && File.Exists(metaPath))
+    {
+        return (fileId, file.FileName, file.Length);
+    }
 
     using (var stream = new FileStream(filePath, FileMode.Create))
     {
