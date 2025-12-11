@@ -142,19 +142,17 @@ app.MapGet("/submissions/{id:guid}/wordcloud", async (Guid id, AnalysisDbContext
         fontFamily = "sans-serif",
         fontScale = 30,
         scale = "linear",
-        chart = new
-        {
-            type = "wordCloud",
-            data = new
-            {
-                text = text,
-                rotate = 0
-            }
-        }
+
+        text = text,
+
+        rotation = 0,
+        removeStopwords = false,
+        minWordLength = 3,
     };
 
     var qcClient = httpClientFactory.CreateClient("QuickChart");
-    var response = await qcClient.PostAsJsonAsync("https://quickchart.io/chart", chartConfig);
+    var response = await qcClient.PostAsJsonAsync("https://quickchart.io/wordcloud", chartConfig);
+
 
     if (!response.IsSuccessStatusCode)
         return Results.Problem("Ошибка генерации облака слов");
